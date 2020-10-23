@@ -1,0 +1,10 @@
+name: FeatherMarket
+version: ${project.version}
+main: com.wasted_ticks.feathermarket.FeatherMarket
+api-version: 1.13
+depend: [Vault]
+authors: [Wasted_Ticks]
+commands:
+  market:
+    description: market command
+    usage: /market
