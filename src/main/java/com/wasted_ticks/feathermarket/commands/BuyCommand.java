@@ -15,7 +15,12 @@ public class BuyCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+
         sender.sendMessage("buy command");
+
+        //market buy confirm
+        //market buy cancel
+
         return false;
     }
 }

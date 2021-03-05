@@ -1,13 +1,15 @@
 package com.wasted_ticks.feathermarket.api;
 
 import com.wasted_ticks.feathermarket.FeatherMarket;
+import com.wasted_ticks.feathermarket.data.MarketItem;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.io.BukkitObjectOutputStream;
+import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.List;
-import java.util.UUID;
 
 public class MarketAPI {
 
@@ -17,18 +19,35 @@ public class MarketAPI {
         this.plugin = plugin;
     }
 
-    public List<ItemStack> getOffersByOfflinePlayer(OfflinePlayer player){
+    public List<MarketItem> getOffersByOfflinePlayer(OfflinePlayer player){
+        return MarketItem.where("seller_uuid = '" + player.getUniqueId().toString() + "'");
+    }
 
-        String uuid = player.getUniqueId().toString();
-        String query = "SELECT * FROM feather_market WHERE seller_uuid='" + uuid + "' ORDER BY id DESC;";
+    public List<MarketItem> getOffers() {
+        return MarketItem.findAll().orderBy("material asc");
+    }
+
+    public boolean postItem(OfflinePlayer player, ItemStack stack, double price) {
+
+        MarketItem item = new MarketItem();
+
+        item.setString("seller_uuid", player.getUniqueId().toString());
+        item.setString("material", stack.getType().toString());
+        item.setInteger("amount", stack.getAmount());
+        item.setDouble("price", price);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
-            ResultSet rs = plugin.getDatabase().getConnection().prepareStatement(query).executeQuery();
-        } catch (SQLException e) {
-            e.printStackTrace();
+            BukkitObjectOutputStream bukkitOutputStream = new BukkitObjectOutputStream(baos);
+            bukkitOutputStream.writeObject(stack);
+            bukkitOutputStream.close();
+        } catch (IOException e) {
         }
+        String stackData = Base64Coder.encodeLines(baos.toByteArray());
 
-        return null;
+        item.setString("item", stackData);
 
+        return item.saveIt();
     }
 
 }

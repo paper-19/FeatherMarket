@@ -1,8 +1,18 @@
 package com.wasted_ticks.feathermarket.util;
 
 import com.wasted_ticks.feathermarket.FeatherMarket;
+import com.wasted_ticks.feathermarket.data.MarketItem;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.io.BukkitObjectOutputStream;
+import org.javalite.activejdbc.Base;
+import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.sql.*;
 
 public class DatabaseManager {
@@ -15,8 +25,8 @@ public class DatabaseManager {
         this.plugin = plugin;
         this.initConnection();
         this.initTables();
-        this.close();
     }
+
 
     public Connection getConnection() {
         try {
@@ -32,6 +42,8 @@ public class DatabaseManager {
     public void close() {
         if (connection != null) {
             try {
+                //close javalite connection
+                Base.close();
                 connection.close();
             } catch (SQLException e) {
                 plugin.getLog().severe("[FeatherMarket] Unable to close DatabaseManager connection.");
@@ -48,6 +60,8 @@ public class DatabaseManager {
 
         try {
             this.connection = DriverManager.getConnection("jdbc:sqlite:" + this.file.getAbsolutePath());
+            // init javalite connection
+            Base.attach(this.connection);
         } catch (SQLException e) {
             plugin.getLog().severe("[FeatherMarket] Unable to initialize DatabaseManager connection.");
         }
@@ -69,13 +83,16 @@ public class DatabaseManager {
 
     private void initTables() {
         if(!this.existsTable("feather_market")) {
-            plugin.getLog().info("[FeatherMarket] Creating feather_market table.");
-            String query = "CREATE TABLE IF NOT EXISTS `feather_market` ("
+            plugin.getLog().info("[FeatherMarket] Creating market_items table.");
+            String query = "CREATE TABLE IF NOT EXISTS `market_items` ("
                 + " `id` INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + " `seller_uuid` VARCHAR(255) NOT NULL, "
                 + " `item` VARCHAR(255) NOT NULL, "
+                + " `material` VARCHAR(255) NOT NULL, "
                 + " `amount` INT NOT NULL, "
                 + " `price` double(64,2) NOT NULL, "
+                + " `active` INT NOT NULL DEFAULT 1, "
+                + " `cancelling` INT NOT NULL DEFAULT 0, "
                 + " `date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);";
             try {
                 if(!connection.isClosed()) {
@@ -83,13 +100,13 @@ public class DatabaseManager {
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
-                plugin.getLog().severe("[FeatherMarket] Unable to create feather_market table.");
+                plugin.getLog().severe("[FeatherMarket] Unable to create market_items table.");
             }
         }
 
         if(!this.existsTable("feather_transaction_log")) {
-            plugin.getLog().info("[FeatherMarket] Creating feather_transaction_log table.");
-            String query = "CREATE TABLE IF NOT EXISTS `feather_transaction_log` ("
+            plugin.getLog().info("[FeatherMarket] Creating market_transactions table.");
+            String query = "CREATE TABLE IF NOT EXISTS `market_transactions` ("
                 + " `id` INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + " `seller_uuid` VARCHAR(255) NOT NULL, "
                 + " `buyer_uuid` VARCHAR(255) NOT NULL, "
@@ -102,7 +119,7 @@ public class DatabaseManager {
                     connection.createStatement().execute(query);
                 }
             } catch (SQLException e) {
-                plugin.getLog().severe("[FeatherMarket] Unable to create feather_transaction_log table.");
+                plugin.getLog().severe("[FeatherMarket] Unable to create market_transactions table.");
             }
 
         }

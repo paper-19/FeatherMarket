@@ -1,16 +1,18 @@
 package com.wasted_ticks.feathermarket.commands;
 
 import com.wasted_ticks.feathermarket.FeatherMarket;
-import com.wasted_ticks.feathermarket.api.MarketAPI;
+import com.wasted_ticks.feathermarket.data.MarketItem;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.List;
+
 public class SellCommand implements CommandExecutor {
 
-    private FeatherMarket plugin;
+    private static FeatherMarket plugin;
 
     public SellCommand(FeatherMarket plugin) {
         this.plugin = plugin;
@@ -19,51 +21,47 @@ public class SellCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
-        if(validArgs(sender, args)) {
-            sender.sendMessage("Valid args");
+        if(!validity(sender, args)){
+            sender.sendMessage("Invalid usage: /market sell <price_for_stack>");
+            return false;
         }
+
         Player player = (Player) sender;
         ItemStack stack = player.getInventory().getItemInMainHand();
+        double price = Double.parseDouble(args[1]);
 
-        //i am here
-
-        //args[0] = sell
-        //args[1] = price_per_item
-        //args[2] = boolean for all
-
-
-        sender.sendMessage("sell command");
-        return false;
-    }
-
-    private boolean validArgs(CommandSender sender, String[] args) {
-
-        switch (args.length) {
-            case 3:
-                if(!args[2].equalsIgnoreCase("all")) {
-                    sender.sendMessage("Invalid second argument supplied.");
-                    break;
-                }
-            case 2:
-                String stringPrice = args[1];
-                if(stringPrice.matches("^[0-9]+(\\.[0-9]{1,2})?$")) {
-                    try{
-                        double pricePer = Double.parseDouble(stringPrice);
-                        if(pricePer != 0) {
-                            return true;
-                        } else {
-                            sender.sendMessage("Invalid price argument.");
-                            break;
-                        }
-                    } catch(NumberFormatException e) {
-                        sender.sendMessage("Unable to parse supplied amount.");
-                        break;
-                    }
-                }
-            default: sender.sendMessage("Invalid amount of arguments supplied.");
+        if(stack.getType().isAir()) {
+            sender.sendMessage("Hold the item you wish to sell in your main hand.");
+            return false;
         }
 
-        return false;
+        List<MarketItem> items = plugin.getMarketAPI().getOffersByOfflinePlayer(player);
+        if(items.size() >= 3) {
+            sender.sendMessage("You have too many offers in the market currently, cancel some before trying to add more.");
+            return false;
+        }
 
+        boolean posted = plugin.getMarketAPI().postItem(player, stack, price);
+        if(posted) {
+            player.getInventory().removeItem(stack);
+        }
+
+        return true;
+    }
+
+    private boolean validity(CommandSender sender, String[] args) {
+        boolean valid = false;
+        if(args.length == 2) {
+            String stringPrice = args[1];
+            if (stringPrice.matches("^[0-9]+(\\.[0-9]{1,2})?$")) {
+                try {
+                    double pricePer = Double.parseDouble(stringPrice);
+                    if (pricePer != 0) {
+                         valid = true;
+                    }
+                } catch(NumberFormatException e) { }
+            }
+        }
+        return valid;
     }
 }

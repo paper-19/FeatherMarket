@@ -20,20 +20,13 @@ public class Handler implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(args.length == 0) {
             commands.get("market").onCommand(sender, command, label, args);
-            return true;
         } else {
-            if(commands.containsKey(args[0])) {
-                commands.get(args[0]).onCommand(sender, command, label, args);
-                return true;
+            if(commands.containsKey(args[0].toLowerCase())) {
+                commands.get(args[0].toLowerCase()).onCommand(sender, command, label, args);
             } else {
-                List<String> list = List.from(args);
-                if(list.stream().allMatch(StringUtils::isAlpha)) {
-                    commands.get("market").onCommand(sender, command, label, args);
-                } else {
-                    sender.sendMessage("Err.");
-                }
-                return true;
+                sender.sendMessage("Invalid market command specified.");
             }
         }
+        return true;
     }
 }

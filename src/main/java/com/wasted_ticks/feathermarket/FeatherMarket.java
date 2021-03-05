@@ -4,7 +4,10 @@ import com.avaje.ebean.validation.NotNull;
 import com.wasted_ticks.feathermarket.api.MarketAPI;
 import com.wasted_ticks.feathermarket.commands.*;
 import com.wasted_ticks.feathermarket.config.MarketConfig;
+import com.wasted_ticks.feathermarket.inventories.MarketInventoryProvider;
 import com.wasted_ticks.feathermarket.util.DatabaseManager;
+import fr.minuskube.inv.InventoryManager;
+import fr.minuskube.inv.SmartInvsPlugin;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -25,11 +28,13 @@ public final class FeatherMarket extends JavaPlugin {
     public void onEnable() {
         // Plugin startup logic
 //        this.getConfig().options().copyDefaults(true);
+
+        plugin = this;
+
         this.saveDefaultConfig();
         this.setupEconomy();
         this.registerCommands();
 
-        plugin = this;
         api = new MarketAPI(plugin);
         config = new MarketConfig(plugin);
         database = new DatabaseManager(plugin);
@@ -63,8 +68,6 @@ public final class FeatherMarket extends JavaPlugin {
         handler.register("market", (CommandExecutor) new MarketCommand(plugin));
         handler.register("reload", (CommandExecutor) new ReloadCommand(plugin));
         handler.register("sell", (CommandExecutor) new SellCommand(plugin));
-        handler.register("revalue", (CommandExecutor) new RevalueCommand(plugin));
-        handler.register("restock", (CommandExecutor) new RestockCommand(plugin));
         handler.register("help", (CommandExecutor) new HelpCommand(plugin));
         handler.register("offers", (CommandExecutor) new OffersCommand(plugin));
         handler.register("buy", (CommandExecutor) new BuyCommand(plugin));
@@ -75,7 +78,7 @@ public final class FeatherMarket extends JavaPlugin {
     @Override
     public void onDisable() {
         // Plugin shutdown logic
-
+        database.close();
     }
 
     /**

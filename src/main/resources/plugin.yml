@@ -2,7 +2,7 @@ name: FeatherMarket
 version: ${project.version}
 main: com.wasted_ticks.feathermarket.FeatherMarket
 api-version: 1.13
-depend: [Vault]
+depend: [Vault, SmartInvs]
 authors: [Wasted_Ticks]
 commands:
   market:
